@@ -12,6 +12,7 @@ import cv2
 import numpy as np
 import Tkinter as tk
 import tkFileDialog
+import copy
 
 
 #######Environment Variables########
@@ -103,7 +104,7 @@ def resultSynthesizer(inList):
 
 def emptyCleanUp(items):
     
-    print items
+    # print items
 
     result = []
     for a in items:
@@ -139,7 +140,93 @@ def transform_image(image999, parama, paramb, paramc):
 def hsv_mod(value, desired):
 	return np.uint8(value + (value/255.0)*((255.0-value)/255.0)*(desired-value))
 
+def processImage(imageOLD, oldScore, newScore):
 
+    #newScore = 1 - newScore
+
+    imageP = copy.deepcopy(imageOLD)
+
+    #xmin = 140
+    #xmax = 260
+    xmin = 158
+    xmax = 278
+    xhalf = (xmin + xmax) / 2
+    xhalf2 = (xmax - xmin) /2
+    #yzero = 270
+    #ydistort = 20
+    yzero = 255
+    ydistort = 18
+
+    oldC = (oldScore - 0.5) / 0.5 * ydistort
+    oldA = -oldC / (xhalf2 * xhalf2)
+
+    newC = (newScore - 0.5) / 0.5 * ydistort
+    newA = -newC / (xhalf2 * xhalf2)
+
+    # print (newA, newC)
+
+    for x in range(xmin, xmax):        
+        arrB = []
+        arrG = []
+        arrR = []
+        for y in range(int(yzero - ydistort * 1.5), int(yzero + ydistort * 1.5)):
+            arrB.append(imageP[y][x][0])
+            arrG.append(imageP[y][x][1])
+            arrR.append(imageP[y][x][2])
+        
+        tempX = x - xhalf
+        tempX2 = tempX * tempX
+        oldCenter = oldA * tempX2 + oldC + 1.5 * ydistort
+        newCenter = newA * tempX2 + newC + 1.5 * ydistort
+
+        # print (oldCenter, newCenter, len(arrB), tempX2)
+
+        newB = newDistort(arrB, oldCenter, newCenter, len(arrB))
+        newG = newDistort(arrG, oldCenter, newCenter, len(arrG))
+        newR = newDistort(arrR, oldCenter, newCenter, len(arrR))
+
+        offset = int(yzero - ydistort * 1.5)
+        for y in range(int(yzero - ydistort * 1.5), int(yzero + ydistort * 1.5)):
+            imageP[y][x][0] = newB[y - offset]
+            imageP[y][x][1] = newG[y - offset]
+            imageP[y][x][2] = newR[y - offset]
+            #imageP[y][x][0] = 255
+            #imageP[y][x][1] = 255
+            #imageP[y][x][2] = 255
+    
+    
+    #cv2.rectangle( imageP,
+    #       ( xmin, int(yzero - ydistort * 1.5)),
+    #       ( xmax, int(yzero + ydistort * 1.5)),
+    #       ( 0, 255, 255 ),  3);
+
+    return imageP
+
+def newDistort(oldArray, oldCenter, newCenter, newlen):
+
+	oldRight = len(oldArray) - oldCenter
+	newRight = newlen - newCenter
+
+	result = []
+
+	for x in range (0, newlen):
+		if x < newCenter:
+			oldX = oldCenter + oldCenter * (x - newCenter) / float(newCenter)
+		else:
+			oldX = oldCenter + oldRight * (x - newCenter) / float(newRight) 
+	
+		if oldX < 0:
+			oldX = 0
+		elif oldX >= len(oldArray) - 1:
+			oldX = len(oldArray)-2
+			print oldX
+
+		# print oldX
+		oldArray[int(oldX)]
+
+		value = float(oldArray[int(oldX)]) + float((oldX - int(oldX))) * (float(oldArray[int(oldX) + 1]) - float(oldArray[int(oldX)]))
+		result.append(value)
+	return result
 #######End Methods########
 
 
@@ -147,14 +234,21 @@ def hsv_mod(value, desired):
 #######Main########
 # setup()
 
-root = tk.Tk()
-root.withdraw()
-file_path = tkFileDialog.askopenfilename()
+doFace = False
 
-print file_path
+print sys.argv[1]
+
+if len(sys.argv) == 2 and sys.argv[1] == '-face':
+    doFace = True
+else:
+    root = tk.Tk()
+    root.withdraw()
+    file_path = tkFileDialog.askopenfilename()
+
+    print file_path
 
 pygame.init()
-screenSize = swidth, sheight = 1000, 600
+screenSize = swidth, sheight = 1000, 720
 DISPLAYSURF = pygame.display.set_mode(screenSize)
 pygame.display.set_caption('Mood Color')
 pygame.font.init()
@@ -170,7 +264,7 @@ textRectObj2.center = (swidth / 2, 40)
 indicoStuff = Analysis()
 pp = pprint.PrettyPrinter(indent=4)
 
-pt = Plotter(500, 350, 480, 230, DISPLAYSURF, 'Sentiment Analysis')
+pt = Plotter(500, 450, 480, 250, DISPLAYSURF, 'Sentiment Analysis')
 
 x = [1,2,3,4,5,6,7,8,9]
 y = [2,4,2,1,5,7,8,2,0]
@@ -208,20 +302,31 @@ sentPolitical = []
 pygame.scrap.init()
 clipboard = gtk.clipboard_get()
 
-ball = pygame.image.load(file_path)
+prevScore = 0.5
+if doFace == False:
+    ball = pygame.image.load(file_path)
 
-img = cv2.imread(file_path)
+    img = cv2.imread(file_path)
 
-ballrect = ball.get_rect()
-ballrect = ballrect.move(600, 80)
+    ballrect = ball.get_rect()
+    ballrect = ballrect.move(550, 80)
 
-image2 = cv2.resize(img, (370, 260));
+    image2 = cv2.resize(img, (420, 350));
+else:
+    ball = pygame.image.load('face2.jpg')
 
-image4 = image2
+    img = cv2.imread('face2.jpg')
+
+    ballrect = ball.get_rect()
+    ballrect = ballrect.move(550, 80)
+
+    image2 = cv2.resize(img, (420, 350));
+
+    image4 = copy.deepcopy(image2)
 
 # loop()
 while True:
-
+    
     time.sleep(0.01)
 
     DISPLAYSURF.fill(WHITE)
@@ -250,6 +355,8 @@ while True:
                     inString += '!'               
                 elif event.key == K_BACKSPACE:
                     inString = inString[0:-1]
+                elif event.key == K_RETURN:
+                    inString += ' '
                 elif inkey in string.printable:
                     if event.key == K_RETURN or event.key == 9:
                         inkey = chr(32)
@@ -258,7 +365,7 @@ while True:
 
                 if event.key == K_RETURN or event.key == 9 or event.key == 32:
                     sentences = paragraphSplitter(inString)
-                    print inString
+                    # print inString
                     #pp.pprint(sentences)
                     sentenceResult = indicoStuff.getOverallResult(sentences)
                     sentResult = resultSynthesizer(sentenceResult)
@@ -279,6 +386,9 @@ while True:
             pt.alert(1, counter)
 
             image4 = transform_image(image2, sentResult[1][counter], sentResult[2][counter], sentResult[7][counter])
+            if doFace:
+                image4 = processImage(image4, prevScore, sentResult[1][counter])
+                prevScore = sentResult[1][counter]
 
         else:
             # print "elapsed time: " + str(time.time() - t1)

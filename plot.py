@@ -31,11 +31,11 @@ class Plotter(pygame.sprite.Sprite):
         self.sizeX = sizeX
         self.sizeY = sizeY
 
-        self.xmin = -5
-        self.xmax = 15
+        self.xmin = -0.5
+        self.xmax = 10
         
         self.ymin = -0.05
-        self.ymax = 1.05
+        self.ymax = 1.1
 
         self.PTCOLOR = (  0, 200,  60)
         self.PTCOLOR2 = (255, 10,  90)
@@ -232,7 +232,7 @@ class Plotter(pygame.sprite.Sprite):
     def zoomFit(self):
 
         if len(self.dataX) == 0:
-            self.xmin = -2
+            self.xmin = -0.5
             self.xmax = 10
             #self.ymin = -2
             #self.ymax = 10
