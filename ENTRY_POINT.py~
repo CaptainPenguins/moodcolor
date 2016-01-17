@@ -61,7 +61,7 @@ def updatetext():
         inStringList.append ( inString[i*char_max: min((i+1)*char_max,len(inString))] )
         i += 1
     for i in range (0,len(inStringList)):
-        tempSurface = fontObj.render(inStringList[i], True, AQUA)
+        tempSurface = fontObj.render(inStringList[i], True, Fuchsia)
         tempRectObj = tempSurface.get_rect()
         tempRectObj.top = text_yaxis + 20*i
         tempRectObj.left = 15
