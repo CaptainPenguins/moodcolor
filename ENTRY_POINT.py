@@ -236,8 +236,6 @@ def newDistort(oldArray, oldCenter, newCenter, newlen):
 
 doFace = False
 
-print sys.argv[1]
-
 if len(sys.argv) == 2 and sys.argv[1] == '-face':
     doFace = True
 else:
@@ -322,7 +320,7 @@ else:
 
     image2 = cv2.resize(img, (420, 350));
 
-    image4 = copy.deepcopy(image2)
+image4 = copy.deepcopy(image2)
 
 # loop()
 while True:

@@ -236,8 +236,6 @@ def newDistort(oldArray, oldCenter, newCenter, newlen):
 
 doFace = False
 
-print sys.argv[1]
-
 if len(sys.argv) == 2 and sys.argv[1] == '-face':
     doFace = True
 else:
